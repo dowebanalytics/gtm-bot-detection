@@ -1,15 +1,11 @@
 ___INFO___
 
 {
-  "displayName": "Bot Detection — Result",
-  "description": "Calcola bot score da 21 segnali. Restituisce 'normal user' o 'possible bot'. Richiede DOM Helper e Init Tag. Bot Detection v3 — DO Web Analytics.",
-  "securityGroups": [],
-  "id": "cvt_do_bot_detection_result",
+  "displayName": "Bot Detection Result",
+  "description": "Calcola bot score da 21 segnali e restituisce normal user o possible bot. Richiede DOM Helper e Init Tag. Bot Detection v3 DO Web Analytics.",
   "type": "VARIABLE",
-  "version": 1,
   "containerContexts": ["WEB"]
 }
-
 
 ___TEMPLATE_PARAMETERS___
 

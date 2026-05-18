@@ -1,15 +1,11 @@
 ___INFO___
 
 {
-  "displayName": "Bot Detection — Init",
-  "description": "Scrive threshold e debug su window._bd*. Da eseguire su DOM Ready Priorita 10 dopo DOM Helper Priorita 20. Bot Detection v3 — DO Web Analytics.",
-  "securityGroups": [],
-  "id": "cvt_do_bot_detection_init",
+  "displayName": "Bot Detection Init",
+  "description": "Scrive threshold e debug su window bd. DOM Ready Priorita 10 dopo DOM Helper Priorita 20. Bot Detection v3 DO Web Analytics.",
   "type": "TAG",
-  "version": 1,
   "containerContexts": ["WEB"]
 }
-
 
 ___TEMPLATE_PARAMETERS___
 
