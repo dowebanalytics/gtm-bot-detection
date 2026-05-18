@@ -2,15 +2,13 @@ ___INFO___
 
 {
   "displayName": "Bot Detection — Result",
-  "description": "Calcola il bot score da 21 segnali e restituisce 'normal user' oppure 'possible bot'. Richiede DOM Helper (Priorità 20) e Init Tag (Priorità 10) già eseguiti. Fa parte del sistema Bot Detection v3 — DO Web Analytics / Tag Manager Italia.",
+  "description": "Calcola bot score da 21 segnali. Restituisce 'normal user' o 'possible bot'. Richiede DOM Helper e Init Tag. Bot Detection v3 — DO Web Analytics.",
   "securityGroups": [],
   "id": "cvt_do_bot_detection_result",
   "type": "VARIABLE",
   "version": 1,
-  "brand": {
-    "displayName": "DO Web Analytics",
-    "id": "brand_do_webanalytics"
-  },
+  "containerContexts": ["WEB"]
+},
   "containerContexts": [
     "WEB"
   ]
@@ -35,7 +33,6 @@ var details   = [];
 var threshold = makeInteger(copyFromWindow('_bdThreshold')) || 5;
 var debugMode = copyFromWindow('_bdDebug') || false;
 
-// ── 1. SCREEN vs BROWSER DIMENSIONS ─────────────────────────────────────────
 var screenWidth   = makeInteger(copyFromWindow('screen.width'))   || 0;
 var screenHeight  = makeInteger(copyFromWindow('screen.height'))  || 0;
 var browserWidth  = makeInteger(copyFromWindow('innerWidth'))     || 99999;
@@ -43,44 +40,45 @@ var browserHeight = makeInteger(copyFromWindow('innerHeight'))    || 99999;
 var deltaWidth    = screenWidth  - browserWidth;
 var deltaHeight   = screenHeight - browserHeight;
 
-if (screenWidth > 0  && deltaWidth  < 0)  { botScore += 3; details.push('deltaWidth<0');   }
+if (screenWidth  > 0 && deltaWidth  < 0)  { botScore += 3; details.push('deltaWidth<0');   }
 if (screenHeight > 0 && deltaHeight <= 0) { botScore += 3; details.push('deltaHeight<=0'); }
 
-// ── 2. WEBDRIVER ─────────────────────────────────────────────────────────────
 if (copyFromWindow('navigator.webdriver') === true) { botScore += 5; details.push('webdriver=true'); }
 
-// ── 3. USER AGENT ────────────────────────────────────────────────────────────
 var ua = makeString(copyFromWindow('navigator.userAgent')) || '';
-if (/HeadlessChrome|PhantomJS|Selenium|WebDriver/i.test(ua)) { botScore += 4; details.push('suspiciousUA'); }
+var uaLower = ua.toLowerCase();
+var isHeadless = uaLower.indexOf('headlesschrome') !== -1 ||
+                 uaLower.indexOf('phantomjs')      !== -1 ||
+                 uaLower.indexOf('selenium')       !== -1 ||
+                 uaLower.indexOf('webdriver')      !== -1;
+if (isHeadless) { botScore += 4; details.push('suspiciousUA'); }
 
-// ── 4. PLUGINS (da DOM Helper) ────────────────────────────────────────────────
 var pluginsLen = makeInteger(copyFromWindow('_bdPluginsLen'));
 if (pluginsLen === 0) { botScore += 2; details.push('noPlugins'); }
 
-// ── 5. COLOR DEPTH ───────────────────────────────────────────────────────────
 var colorDepth = makeInteger(copyFromWindow('screen.colorDepth')) || 0;
 if (colorDepth > 0 && colorDepth < 16) { botScore += 2; details.push('colorDepth<16'); }
 
-// ── 6. DEVICE PIXEL RATIO ────────────────────────────────────────────────────
 var dpr = makeNumber(copyFromWindow('devicePixelRatio')) || 1;
 if (dpr < 1) { botScore += 2; details.push('dpr<1'); }
-if (/iPhone|iPad/.test(ua) && dpr < 2) { botScore += 3; details.push('appleDprAnomaly'); }
+var isApple = ua.indexOf('iPhone') !== -1 || ua.indexOf('iPad') !== -1;
+if (isApple && dpr < 2) { botScore += 3; details.push('appleDprAnomaly'); }
 
-// ── 7. TOUCH vs USER AGENT ────────────────────────────────────────────────────
-var isMobile    = /Mobi|Android|iPhone|iPad/i.test(ua);
+var isMobile = uaLower.indexOf('mobi')    !== -1 ||
+               uaLower.indexOf('android') !== -1 ||
+               ua.indexOf('iPhone')       !== -1 ||
+               ua.indexOf('iPad')         !== -1;
 var touchPoints = makeInteger(copyFromWindow('navigator.maxTouchPoints')) || 0;
 var hasTouch    = touchPoints > 0;
 if (isMobile && !hasTouch)                      { botScore += 3; details.push('mobileUAnoTouch');         }
 if (!isMobile && hasTouch && screenWidth < 500) { botScore += 2; details.push('desktopUAmobileViewport'); }
 
-// ── 8. CANVAS (da DOM Helper) ─────────────────────────────────────────────────
 var canvasScore = makeInteger(copyFromWindow('_bdCanvasScore')) || 0;
 if (canvasScore > 0) {
   botScore += canvasScore;
   details.push(canvasScore >= 3 ? 'canvasEmpty' : 'canvasBlocked');
 }
 
-// ── 9. WEBGL (da DOM Helper) ──────────────────────────────────────────────────
 var webglScore = makeInteger(copyFromWindow('_bdWebGLScore')) || 0;
 if (webglScore > 0) {
   botScore += webglScore;
@@ -89,28 +87,25 @@ if (webglScore > 0) {
   else                       { details.push('webglError');       }
 }
 
-// ── 10. WINDOW.CHROME ─────────────────────────────────────────────────────────
-var isChrome     = /Chrome/.test(ua) && !/Chromium|Edge/.test(ua);
+var isChrome     = ua.indexOf('Chrome')   !== -1 &&
+                   ua.indexOf('Chromium') === -1 &&
+                   ua.indexOf('Edge')     === -1 &&
+                   ua.indexOf('Edg/')     === -1;
 var hasChromeObj = !!copyFromWindow('chrome');
 if (isChrome && !hasChromeObj) { botScore += 3; details.push('chromeMissing'); }
 
-// ── 11. LINGUA E TIMEZONE ─────────────────────────────────────────────────────
 var lang = makeString(copyFromWindow('navigator.language')) || '';
 var tz   = makeString(copyFromWindow('_bdTimezone'))        || '';
 if (!lang)                { botScore += 2; details.push('noLanguage');      }
 if (lang && tz === 'UTC') { botScore += 2; details.push('langTimezoneUTC'); }
 
-// ── 12. PERMISSIONS (da DOM Helper) ───────────────────────────────────────────
 if (copyFromWindow('_bdNotificationsDenied') === true) { botScore += 1; details.push('notificationsDenied'); }
 
-// ── 13. MOUSE E SCROLL (da DOM Helper) ───────────────────────────────────────
-// Valutati solo dopo la prima inizializzazione (_bdInit = true)
 if (copyFromWindow('_bdInit') === true) {
   if (copyFromWindow('_bdMouseMoved') === false) { botScore += 2; details.push('noMouseMove'); }
   if (copyFromWindow('_bdScrolled')   === false) { botScore += 1; details.push('noScroll');    }
 }
 
-// ── RISULTATO ─────────────────────────────────────────────────────────────────
 var result = (botScore >= threshold) ? 'possible bot' : 'normal user';
 
 if (debugMode || copyFromWindow('location.hostname') === 'localhost') {

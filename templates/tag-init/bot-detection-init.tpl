@@ -2,18 +2,12 @@ ___INFO___
 
 {
   "displayName": "Bot Detection — Init",
-  "description": "Inizializza il namespace window._bd* e salva la configurazione (threshold, debug). Da eseguire su DOM Ready con Priorità 10, dopo il DOM Helper (Priorità 20). Fa parte del sistema Bot Detection v3 — DO Web Analytics / Tag Manager Italia.",
+  "description": "Scrive threshold e debug su window._bd*. Da eseguire su DOM Ready Priorita 10 dopo DOM Helper Priorita 20. Bot Detection v3 — DO Web Analytics.",
   "securityGroups": [],
   "id": "cvt_do_bot_detection_init",
   "type": "TAG",
   "version": 1,
-  "brand": {
-    "displayName": "DO Web Analytics",
-    "id": "brand_do_webanalytics"
-  },
-  "containerContexts": [
-    "WEB"
-  ]
+  "containerContexts": ["WEB"]
 }
 
 
