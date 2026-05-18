@@ -1,0 +1,76 @@
+<script>
+(function() {
+  // Bot Detection DOM Helper v3 — DO Web Analytics / Tag Manager Italia
+  // Eseguire su DOM Ready con Priorità 20, PRIMA dei template Init (Priorità 10).
+  // Calcola i segnali che richiedono accesso DOM e li salva su window._bd*
+  // per renderli disponibili ai Custom Template GTM (sandboxed JavaScript).
+
+  if (window._bdHelperLoaded) return;
+  window._bdHelperLoaded = true;
+
+  // Timezone
+  try {
+    window._bdTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+  } catch(e) {
+    window._bdTimezone = '';
+  }
+
+  // Plugin count
+  window._bdPluginsLen = (navigator.plugins) ? navigator.plugins.length : -1;
+
+  // Mouse / Scroll listeners — compatibile IE11 (no { once: true })
+  window._bdMouseMoved = false;
+  window._bdScrolled   = false;
+  document.addEventListener('mousemove', function handler() {
+    window._bdMouseMoved = true;
+    document.removeEventListener('mousemove', handler);
+  });
+  document.addEventListener('scroll', function handler() {
+    window._bdScrolled = true;
+    document.removeEventListener('scroll', handler);
+  });
+
+  // Canvas fingerprint
+  try {
+    var canvas = document.createElement('canvas');
+    var ctx    = canvas.getContext('2d');
+    ctx.textBaseline = 'top';
+    ctx.font         = '14px Arial';
+    ctx.fillText('BotDetect', 2, 2);
+    window._bdCanvasScore = (canvas.toDataURL().length < 200) ? 3 : 0;
+  } catch(e) {
+    window._bdCanvasScore = 1; // canvas bloccato (+1)
+  }
+
+  // WebGL renderer
+  try {
+    var gl = document.createElement('canvas').getContext('webgl') ||
+             document.createElement('canvas').getContext('experimental-webgl');
+    if (!gl) {
+      window._bdWebGLScore = 2; // no WebGL (+2)
+    } else {
+      var di = gl.getExtension('WEBGL_debug_renderer_info');
+      if (di) {
+        var r = (gl.getParameter(di.UNMASKED_RENDERER_WEBGL) || '') +
+                (gl.getParameter(di.UNMASKED_VENDOR_WEBGL)   || '');
+        window._bdWebGLScore = (/SwiftShader|llvmpipe|VirtualBox|VMware|Mesa/i.test(r)) ? 3 : 0;
+      } else {
+        window._bdWebGLScore = 0;
+      }
+    }
+  } catch(e) {
+    window._bdWebGLScore = 1; // webgl error (+1)
+  }
+
+  // Permissions API (async — risultato disponibile alla seconda valutazione GTM)
+  window._bdNotificationsDenied = false;
+  try {
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'notifications' }).then(function(res) {
+        window._bdNotificationsDenied = (res.state === 'denied');
+      });
+    }
+  } catch(e) {}
+
+})();
+</script>
