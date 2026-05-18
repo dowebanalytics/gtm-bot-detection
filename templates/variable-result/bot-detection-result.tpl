@@ -8,10 +8,6 @@ ___INFO___
   "type": "VARIABLE",
   "version": 1,
   "containerContexts": ["WEB"]
-},
-  "containerContexts": [
-    "WEB"
-  ]
 }
 
 
