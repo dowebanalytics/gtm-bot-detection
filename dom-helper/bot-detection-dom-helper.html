@@ -4,11 +4,15 @@
   window._bdHelperLoaded = true;
 
   // ── CONFIGURAZIONE ────────────────────────────────────────────────────────
-  // Ex Init Tag — spostato qui per evitare sandbox restrictions GTM
-  // Modifica _bdThreshold per cambiare soglia senza toccare il template
   window._bdThreshold = 5;     // 3=aggressiva | 5=default | 7=conservativa
   window._bdDebug     = false; // true = log [BotDetect] in console su tutti i domini
   window._bdInit      = true;
+
+  // ── DIMENSIONI SCHERMO E BROWSER ──────────────────────────────────────────
+  window._bdScreenWidth   = (typeof screen.width  === 'number' && screen.width  > 0) ? screen.width  : 0;
+  window._bdScreenHeight  = (typeof screen.height === 'number' && screen.height > 0) ? screen.height : 0;
+  window._bdBrowserWidth  = (typeof window.innerWidth  === 'number' && window.innerWidth  > 0) ? window.innerWidth  : 99999;
+  window._bdBrowserHeight = (typeof window.innerHeight === 'number' && window.innerHeight > 0) ? window.innerHeight : 99999;
 
   // ── TIMEZONE ──────────────────────────────────────────────────────────────
   try {
@@ -19,6 +23,27 @@
 
   // ── PLUGIN COUNT ──────────────────────────────────────────────────────────
   window._bdPluginsLen = (navigator.plugins) ? navigator.plugins.length : -1;
+
+  // ── COLOR DEPTH ───────────────────────────────────────────────────────────
+  window._bdColorDepth = screen.colorDepth || 0;
+
+  // ── DEVICE PIXEL RATIO ────────────────────────────────────────────────────
+  window._bdDpr = window.devicePixelRatio || 1;
+
+  // ── USER AGENT ────────────────────────────────────────────────────────────
+  window._bdUA = navigator.userAgent || '';
+
+  // ── TOUCH POINTS ─────────────────────────────────────────────────────────
+  window._bdMaxTouchPoints = navigator.maxTouchPoints || 0;
+
+  // ── LANGUAGE ──────────────────────────────────────────────────────────────
+  window._bdLanguage = navigator.language || '';
+
+  // ── WEBDRIVER ─────────────────────────────────────────────────────────────
+  window._bdWebdriver = (navigator.webdriver === true);
+
+  // ── WINDOW.CHROME ─────────────────────────────────────────────────────────
+  window._bdHasChromeObj = (typeof window.chrome !== 'undefined');
 
   // ── MOUSE / SCROLL LISTENERS (IE11 compatible) ────────────────────────────
   window._bdMouseMoved = false;
@@ -72,7 +97,6 @@
   }
 
   // ── PERMISSIONS API (async) ───────────────────────────────────────────────
-  // Risultato disponibile dalla seconda valutazione della variabile Result
   window._bdNotificationsDenied = false;
   try {
     if (navigator.permissions && navigator.permissions.query) {
