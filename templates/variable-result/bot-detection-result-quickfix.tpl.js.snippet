@@ -1,0 +1,22 @@
+// Rimuovi queste righe dal blocco SANDBOXED_JS se non vuoi ri-importare:
+
+// RIMUOVI INTEGRITY CHECK (richiede _bdLiveCheckPassed)
+//   if (copyFromWindow('_bdLiveCheckPassed') === false) { botScore += 5; details.push('tampering'); }
+
+// RIMUOVI SYNTHETIC MOUSE (richiede _bdMouseUntrustedCount)
+//   var untrusted = makeInteger(copyFromWindow('_bdMouseUntrustedCount')) || 0;
+//   if (untrusted > 0) { botScore += 4; details.push('syntheticMouse=' + untrusted); }
+
+// RIMUOVI SYNTHETIC SCROLL (richiede _bdScrollUntrustedCount)
+//   var scrUntrusted = makeInteger(copyFromWindow('_bdScrollUntrustedCount')) || 0;
+//   if (scrUntrusted > 0) { botScore += 3; details.push('syntheticScroll'); }
+
+// RIMUOVI MOUSE ENTROPY (richiede _bdMouseEntropy + _bdMouseTrustedCount)
+//   var entropy = makeNumber(copyFromWindow('_bdMouseEntropy'));
+//   if (entropy >= 0 && entropy < 20 && copyFromWindow('_bdMouseTrustedCount') > 5) {
+//     botScore += 2; details.push('lowMouseEntropy=' + entropy);
+//   }
+
+// RIMUOVI FIRST MOUSE DELAY (richiede _bdFirstMouseDelay)
+//   var fmDelay = makeNumber(copyFromWindow('_bdFirstMouseDelay'));
+//   if (fmDelay > 0 && fmDelay < 50) { botScore += 2; details.push('mouseTooFast=' + fmDelay + 'ms'); }

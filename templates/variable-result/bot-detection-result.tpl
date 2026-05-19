@@ -143,7 +143,7 @@ if (fmDelay > 0 && fmDelay < 50) {
 // ── RISULTATO ─────────────────────────────────────────────────────────────────
 var result = (botScore >= threshold) ? 'possible bot' : 'normal user';
 
-if (debugMode || copyFromWindow('location.hostname') === 'localhost') {
+if (debugMode) {
   logToConsole('[BotDetect v4] score=' + botScore +
                ' threshold=' + threshold +
                ' | ' + details.join(', ') +
@@ -191,8 +191,7 @@ ___WEB_PERMISSIONS___
               { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"_bdMouseEntropy"},       {"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
               { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"_bdMouseTrustedCount"},  {"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
               { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"_bdFirstMouseDelay"},    {"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
-              { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"_bdLiveCheckPassed"},    {"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
-              { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"location.hostname"},     {"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] }
+              { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"_bdLiveCheckPassed"},    {"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] }
             ]
           }
         }
