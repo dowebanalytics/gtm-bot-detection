@@ -23,7 +23,6 @@ var logToConsole    = require('logToConsole');
 var botScore  = 0;
 var details   = [];
 var threshold = makeInteger(copyFromWindow('_bdThreshold')) || 5;
-var debugMode = copyFromWindow('_bdDebug') || false;
 
 var screenWidth   = makeInteger(copyFromWindow('screen.width'))   || 0;
 var screenHeight  = makeInteger(copyFromWindow('screen.height'))  || 0;
@@ -100,7 +99,7 @@ if (copyFromWindow('_bdInit') === true) {
 
 var result = (botScore >= threshold) ? 'possible bot' : 'normal user';
 
-if (debugMode || copyFromWindow('location.hostname') === 'localhost') {
+if (copyFromWindow('location.hostname') === 'localhost') {
   logToConsole('[BotDetect] score=' + botScore +
                ' threshold=' + threshold +
                ' | ' + details.join(', ') +
@@ -127,7 +126,6 @@ ___WEB_PERMISSIONS___
             "listItem": [
               { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"_bdInit"},{"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
               { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"_bdThreshold"},{"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
-              { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"_bdDebug"},{"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
               { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"screen.width"},{"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
               { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"screen.height"},{"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
               { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"screen.colorDepth"},{"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
