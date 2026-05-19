@@ -51,7 +51,20 @@ Al popup "Permission changes detected" clicca **Approve all**.
 
 **Variables → New → Bot Detection Result** (seleziona il template appena importato) → Salva.
 
-### 4. Pubblicazione
+### 4. Tag Sequencing sui tag critici
+
+Per i tag dove sbagliare è costoso (conversion GA4, form submit, checkout), configura il DOM Helper come **setup tag**:
+
+1. Apri il tag (es. GA4 Event "purchase")
+2. **Advanced Settings → Tag Sequencing**
+3. Spunta **Fire a tag before [Tag] fires**
+4. Setup Tag: seleziona **Bot Detection DOM Helper**
+5. Spunta **Don't fire [Tag] if [Setup Tag] fails or is paused**
+6. Salva
+
+Questo garantisce che il DOM Helper esegua sempre prima del tag dipendente, indipendentemente dal trigger usato.
+
+### 5. Pubblicazione
 
 Submit & Publish il container. La variabile `{{Bot Detection Result}}` restituisce `'possible bot'` o `'normal user'`.
 
@@ -66,6 +79,29 @@ Submit & Publish il container. La variabile `{{Bot Detection Result}}` restituis
 | **Scroll Depth ≥ 25%** | Blog, pagine editoriali |
 | **Timer 5000ms** | Pagine senza interazioni |
 | ❌ DOM Ready / Pageview | NON usare — i segnali comportamentali (mouseMoved, scrolled) non sarebbero ancora popolati |
+
+---
+
+## Priorità vs Tag Sequencing
+
+GTM offre due meccanismi per ordinare l'esecuzione dei tag. Il sistema usa entrambi a seconda del caso:
+
+| Tecnica | Cosa fa | Quando usarla |
+|---|---|---|
+| **Priorità** (Advanced Settings → Tag firing priority) | Ordina i tag che condividono lo stesso trigger. Hint asincrono. | Tag con trigger Click, Form Submit, Scroll Depth, Timer — firano sempre dopo DOM Ready quindi la priorità basta |
+| **Tag Sequencing** (Advanced Settings → Tag Sequencing) | Dipendenza esplicita garantita: il setup tag fira prima del tag principale. | Tag su Page View, conversion critiche, lead form, checkout — quando sbagliare è costoso |
+
+### Quando serve Tag Sequencing
+
+Se un tag fira su **Page View** o **All Pages** (più precoce di DOM Ready), `window._bd*` sarà ancora `undefined` e la variabile restituirà uno score parziale di 3 (solo `noMouseMove + noScroll`) — sotto soglia → classificato come `normal user` anche se è un bot.
+
+In questi casi configura **Tag Sequencing** sul tag dipendente per garantire che il DOM Helper esegua prima.
+
+### Approccio raccomandato
+
+- **Default**: priorità 20 sul DOM Helper (semplice, sufficiente nel 95% dei casi)
+- **Tag critici** (conversion GA4, form submit, checkout, fraud check): **aggiungi Tag Sequencing** come belt-and-suspenders
+- **Tag su Page View**: Tag Sequencing **obbligatoria**
 
 ---
 
