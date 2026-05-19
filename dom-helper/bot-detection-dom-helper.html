@@ -3,10 +3,10 @@
   if (window._bdHelperLoaded) return;
 
   // ╔════════════════════════════════════════════════════════════════════════╗
-  // ║  Bot Detection v4 — Hardened DOM Helper                                ║
+  // ║  Bot Detection — DOM Helper                                                ║
   // ║  DO Web Analytics / Tag Manager Italia                                 ║
   // ║                                                                         ║
-  // ║  Miglioramenti v4 vs v3:                                                ║
+  // ║  Architettura:                                                           ║
   // ║  1. Closure namespace + Object.defineProperty (anti-tampering)         ║
   // ║  2. event.isTrusted check (distingue mouse/scroll reali da sintetici)  ║
   // ║  3. Mouse entropy + timing init (segnali comportamentali avanzati)     ║
@@ -186,7 +186,7 @@
     }
   }
 
-  // Flag base (v3 compatible)
+  // Flag base
   expose('_bdInit',                 function() { return S.init; });
   expose('_bdThreshold',            function() { return S.threshold; });
   expose('_bdDebug',                function() { return S.debug; });
@@ -210,7 +210,7 @@
   expose('_bdMouseMoved',           function() { return S.mouseMoved; });
   expose('_bdScrolled',             function() { return S.scrolled; });
 
-  // Nuovi segnali v4
+  // Segnali avanzati
   expose('_bdMouseUntrustedCount',  function() { return S.mouseUntrustedCount; });
   expose('_bdScrollUntrustedCount', function() { return S.scrollUntrustedCount; });
   expose('_bdMouseEntropy',         function() { return S.mouseEntropyScore; });

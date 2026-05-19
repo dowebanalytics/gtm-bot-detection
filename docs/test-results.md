@@ -1,6 +1,6 @@
-# Test Results v4 — Stress Test 130 Scenari
+# Test Results — Stress Test 130 Scenari
 
-Stress test eseguito su `demo-stape.myshopify.com` con container GTM-5BGBPW5J in produzione.
+Stress test eseguito su un sito di produzione Shopify con container GTM dedicato.
 
 ## Risultati globali
 
@@ -29,7 +29,7 @@ Stress test eseguito su `demo-stape.myshopify.com` con container GTM-5BGBPW5J in
 | Polyglot combinations | 8 | 3 | 37% |
 | **Utenti reali** | **20** | **0** | **0% (corretto)** |
 
-## I 5 nuovi segnali v4
+## Segnali anti-tampering e avanzati in azione
 
 | Segnale | Punti | Scenari catturati |
 |---|---|---|
@@ -41,7 +41,7 @@ Stress test eseguito su `demo-stape.myshopify.com` con container GTM-5BGBPW5J in
 
 ## Resilienza anti-tampering
 
-| Attacco | Risultato v4 |
+| Attacco | Risultato |
 |---|---|
 | `window._bdThreshold = 999` | ✅ BLOCCATO — valore rimane 5 |
 | `delete window._bdInit` | ✅ BLOCCATO — delete=false |

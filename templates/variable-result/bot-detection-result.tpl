@@ -1,8 +1,8 @@
 ___INFO___
 
 {
-  "displayName": "Bot Detection Result v4",
-  "description": "Bot Detection v4 - 26 segnali con anti-tampering, entropy mouse, integrity check. DO Web Analytics.",
+  "displayName": "Bot Detection Result",
+  "description": "Bot Detection - 26 segnali con anti-tampering, entropy mouse, integrity check. DO Web Analytics.",
   "type": "VARIABLE",
   "containerContexts": ["WEB"]
 }
@@ -25,7 +25,7 @@ var details   = [];
 var threshold = makeInteger(copyFromWindow('_bdThreshold')) || 5;
 var debugMode = copyFromWindow('_bdDebug') || false;
 
-// ── v4 SIGNAL #1: INTEGRITY CHECK ────────────────────────────────────────────
+// ── INTEGRITY CHECK ────────────────────────────────────────────
 // Rileva tampering post-init di screen, navigator.webdriver, userAgent
 if (copyFromWindow('_bdLiveCheckPassed') === false) {
   botScore += 5;
@@ -118,22 +118,22 @@ if (copyFromWindow('_bdInit') === true) {
   if (copyFromWindow('_bdScrolled')   === false) { botScore += 1; details.push('noScroll');    }
 }
 
-// ── v4 SIGNAL #2: SYNTHETIC MOUSE EVENTS (event.isTrusted = false) ───────────
+// ── SYNTHETIC MOUSE EVENTS (event.isTrusted = false) ───────────
 var untrusted = makeInteger(copyFromWindow('_bdMouseUntrustedCount')) || 0;
 if (untrusted > 0) { botScore += 4; details.push('syntheticMouse=' + untrusted); }
 
-// ── v4 SIGNAL #3: SYNTHETIC SCROLL EVENTS ────────────────────────────────────
+// ── SYNTHETIC SCROLL EVENTS ────────────────────────────────────
 var scrUntrusted = makeInteger(copyFromWindow('_bdScrollUntrustedCount')) || 0;
 if (scrUntrusted > 0) { botScore += 3; details.push('syntheticScroll'); }
 
-// ── v4 SIGNAL #4: MOUSE ENTROPY (movimento bot-like) ─────────────────────────
+// ── MOUSE ENTROPY (movimento bot-like) ─────────────────────────
 var entropy = makeNumber(copyFromWindow('_bdMouseEntropy'));
 if (entropy >= 0 && entropy < 20 && copyFromWindow('_bdMouseTrustedCount') > 5) {
   botScore += 2;
   details.push('lowMouseEntropy=' + entropy);
 }
 
-// ── v4 SIGNAL #5: FIRST MOUSE TOO FAST (bot inietta evento immediato) ────────
+// ── FIRST MOUSE TOO FAST (bot inietta evento immediato) ────────
 var fmDelay = makeNumber(copyFromWindow('_bdFirstMouseDelay'));
 if (fmDelay > 0 && fmDelay < 50) {
   botScore += 2;
@@ -144,7 +144,7 @@ if (fmDelay > 0 && fmDelay < 50) {
 var result = (botScore >= threshold) ? 'possible bot' : 'normal user';
 
 if (debugMode) {
-  logToConsole('[BotDetect v4] score=' + botScore +
+  logToConsole('[BotDetect] score=' + botScore +
                ' threshold=' + threshold +
                ' | ' + details.join(', ') +
                ' | ' + result);
@@ -205,7 +205,7 @@ ___WEB_PERMISSIONS___
 
 ___NOTES___
 
-Bot Detection Result — v3
+Bot Detection Result
 DO Web Analytics / Tag Manager Italia
 
 PREREQUISITI (ordine obbligatorio):

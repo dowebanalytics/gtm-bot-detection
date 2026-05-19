@@ -1,4 +1,4 @@
-# Setup Guide — GTM Bot Detection v4
+# Setup Guide — GTM Bot Detection
 
 ## Prerequisiti
 - Google Tag Manager Web container
@@ -38,7 +38,7 @@ S.debug     = false; // true = log [BotDetect] in console
 
 1. **GTM → Variables → New**
 2. Nome: `Bot Detection Result`
-3. Variable type: **Custom Template** → seleziona `Bot Detection Result v4`
+3. Variable type: **Custom Template** → seleziona `Bot Detection Result`
 4. Salva
 
 ## Step 4 — Pubblicazione
@@ -52,7 +52,7 @@ S.debug     = false; // true = log [BotDetect] in console
 Apri il sito con Tag Assistant attivo. Nella console (con `_bdDebug = true`):
 
 ```
-[BotDetect v4] score=3 threshold=5 | noM,noS | normal user
+[BotDetect] score=3 threshold=5 | noM,noS | normal user
 ```
 
 Verifica che siano presenti in `window`:
