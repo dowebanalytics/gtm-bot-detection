@@ -3,33 +3,27 @@
   if (window._bdHelperLoaded) return;
   window._bdHelperLoaded = true;
 
-  // Dimensioni schermo e browser
-  window._bdScreenW  = screen.width  || 0;
-  window._bdScreenH  = screen.height || 0;
-  window._bdBrowserW = window.innerWidth  || 99999;
-  window._bdBrowserH = window.innerHeight || 99999;
+  // ── CONFIGURAZIONE ────────────────────────────────────────────────────────
+  // Ex Init Tag — spostato qui per evitare sandbox restrictions GTM
+  // Modifica _bdThreshold per cambiare soglia senza toccare il template
+  window._bdThreshold = 5;     // 3=aggressiva | 5=default | 7=conservativa
+  window._bdDebug     = false; // true = log [BotDetect] in console su tutti i domini
+  window._bdInit      = true;
 
-  // Hardware
-  window._bdColorDepth = screen.colorDepth || 0;
-  window._bdDpr        = window.devicePixelRatio || 1;
-  window._bdTouchPts   = navigator.maxTouchPoints || 0;
-  window._bdPluginsLen = navigator.plugins ? navigator.plugins.length : -1;
-
-  // Browser identity
-  window._bdUA        = navigator.userAgent || '';
-  window._bdWebdriver = navigator.webdriver === true;
-  window._bdLanguage  = navigator.language || '';
-  window._bdChrome    = typeof window.chrome !== 'undefined' && window.chrome !== null;
-  window._bdHostname  = location.hostname || '';
-
-  // Timezone
+  // ── TIMEZONE ──────────────────────────────────────────────────────────────
   try {
     window._bdTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-  } catch(e) { window._bdTimezone = ''; }
+  } catch(e) {
+    window._bdTimezone = '';
+  }
 
-  // Mouse / Scroll — IE11 compatible
+  // ── PLUGIN COUNT ──────────────────────────────────────────────────────────
+  window._bdPluginsLen = (navigator.plugins) ? navigator.plugins.length : -1;
+
+  // ── MOUSE / SCROLL LISTENERS (IE11 compatible) ────────────────────────────
   window._bdMouseMoved = false;
   window._bdScrolled   = false;
+
   document.addEventListener('mousemove', function handler() {
     window._bdMouseMoved = true;
     document.removeEventListener('mousemove', handler);
@@ -39,7 +33,8 @@
     document.removeEventListener('scroll', handler);
   });
 
-  // Canvas fingerprint
+  // ── CANVAS FINGERPRINT ────────────────────────────────────────────────────
+  // 0 = rendering ok | 1 = canvas bloccato (+1) | 3 = canvas vuoto (+3)
   try {
     var canvas = document.createElement('canvas');
     var ctx    = canvas.getContext('2d');
@@ -47,9 +42,12 @@
     ctx.font         = '14px Arial';
     ctx.fillText('BotDetect', 2, 2);
     window._bdCanvasScore = (canvas.toDataURL().length < 200) ? 3 : 0;
-  } catch(e) { window._bdCanvasScore = 1; }
+  } catch(e) {
+    window._bdCanvasScore = 1;
+  }
 
-  // WebGL renderer
+  // ── WEBGL RENDERER ────────────────────────────────────────────────────────
+  // 0 = GPU ok | 1 = errore (+1) | 2 = WebGL assente (+2) | 3 = software GPU (+3)
   try {
     var gl = document.createElement('canvas').getContext('webgl') ||
              document.createElement('canvas').getContext('experimental-webgl');
@@ -60,17 +58,21 @@
       if (di) {
         var r = (gl.getParameter(di.UNMASKED_RENDERER_WEBGL) || '') +
                 (gl.getParameter(di.UNMASKED_VENDOR_WEBGL)   || '');
-        var soft = r.indexOf('SwiftShader') !== -1 ||
-                   r.indexOf('llvmpipe')    !== -1 ||
-                   r.indexOf('VirtualBox')  !== -1 ||
-                   r.indexOf('VMware')      !== -1 ||
-                   r.indexOf('Mesa')        !== -1;
-        window._bdWebGLScore = soft ? 3 : 0;
-      } else { window._bdWebGLScore = 0; }
+        window._bdWebGLScore = (r.indexOf('SwiftShader')  !== -1 ||
+                                r.indexOf('llvmpipe')     !== -1 ||
+                                r.indexOf('VirtualBox')   !== -1 ||
+                                r.indexOf('VMware')       !== -1 ||
+                                r.indexOf('Mesa')         !== -1) ? 3 : 0;
+      } else {
+        window._bdWebGLScore = 0;
+      }
     }
-  } catch(e) { window._bdWebGLScore = 1; }
+  } catch(e) {
+    window._bdWebGLScore = 1;
+  }
 
-  // Permissions API (async)
+  // ── PERMISSIONS API (async) ───────────────────────────────────────────────
+  // Risultato disponibile dalla seconda valutazione della variabile Result
   window._bdNotificationsDenied = false;
   try {
     if (navigator.permissions && navigator.permissions.query) {
