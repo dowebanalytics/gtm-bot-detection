@@ -38,11 +38,11 @@ ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
 
 var setInWindow     = require('setInWindow');
 var makeInteger     = require('makeInteger');
-var makeBoolean     = require('makeBoolean');
+
 var queryPermission = require('queryPermission');
 
 var threshold = makeInteger(data.threshold) || 5;
-var debugMode = makeBoolean(data.debugMode) || false;
+var debugMode = data.debugMode ? true : false;
 
 if (queryPermission('access_globals', 'write', '_bdThreshold')) {
   setInWindow('_bdThreshold', threshold, true);
