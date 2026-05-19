@@ -1,8 +1,8 @@
 ___INFO___
 
 {
-  "displayName": "Bot Detection Result",
-  "description": "Calcola bot score da 21 segnali e restituisce normal user o possible bot. Richiede DOM Helper e Init Tag. Bot Detection v3 DO Web Analytics.",
+  "displayName": "Bot Detection Result v4",
+  "description": "Bot Detection v4 - 26 segnali con anti-tampering, entropy mouse, integrity check. DO Web Analytics.",
   "type": "VARIABLE",
   "containerContexts": ["WEB"]
 }
@@ -25,7 +25,14 @@ var details   = [];
 var threshold = makeInteger(copyFromWindow('_bdThreshold')) || 5;
 var debugMode = copyFromWindow('_bdDebug') || false;
 
-// ── 1. SCREEN vs BROWSER DIMENSIONS (da DOM Helper) ──────────────────────────
+// ── v4 SIGNAL #1: INTEGRITY CHECK ────────────────────────────────────────────
+// Rileva tampering post-init di screen, navigator.webdriver, userAgent
+if (copyFromWindow('_bdLiveCheckPassed') === false) {
+  botScore += 5;
+  details.push('tampering');
+}
+
+// ── 1. SCREEN vs BROWSER DIMENSIONS ──────────────────────────────────────────
 var screenWidth   = makeInteger(copyFromWindow('_bdScreenWidth'))   || 0;
 var screenHeight  = makeInteger(copyFromWindow('_bdScreenHeight'))  || 0;
 var browserWidth  = makeInteger(copyFromWindow('_bdBrowserWidth'))  || 99999;
@@ -36,10 +43,10 @@ var deltaHeight   = screenHeight - browserHeight;
 if (screenWidth  > 0 && deltaWidth  < 0)  { botScore += 3; details.push('deltaWidth<0');   }
 if (screenHeight > 0 && deltaHeight <= 0) { botScore += 3; details.push('deltaHeight<=0'); }
 
-// ── 2. WEBDRIVER (da DOM Helper) ──────────────────────────────────────────────
+// ── 2. WEBDRIVER ─────────────────────────────────────────────────────────────
 if (copyFromWindow('_bdWebdriver') === true) { botScore += 5; details.push('webdriver=true'); }
 
-// ── 3. USER AGENT (da DOM Helper) ────────────────────────────────────────────
+// ── 3. USER AGENT ────────────────────────────────────────────────────────────
 var ua = makeString(copyFromWindow('_bdUA')) || '';
 var uaLower = ua.toLowerCase();
 var isHeadless = uaLower.indexOf('headlesschrome') !== -1 ||
@@ -48,21 +55,21 @@ var isHeadless = uaLower.indexOf('headlesschrome') !== -1 ||
                  uaLower.indexOf('webdriver')      !== -1;
 if (isHeadless) { botScore += 4; details.push('suspiciousUA'); }
 
-// ── 4. PLUGINS (da DOM Helper) ────────────────────────────────────────────────
+// ── 4. PLUGINS ────────────────────────────────────────────────────────────────
 var pluginsLen = makeInteger(copyFromWindow('_bdPluginsLen'));
 if (pluginsLen === 0) { botScore += 2; details.push('noPlugins'); }
 
-// ── 5. COLOR DEPTH (da DOM Helper) ───────────────────────────────────────────
+// ── 5. COLOR DEPTH ───────────────────────────────────────────────────────────
 var colorDepth = makeInteger(copyFromWindow('_bdColorDepth')) || 0;
 if (colorDepth > 0 && colorDepth < 16) { botScore += 2; details.push('colorDepth<16'); }
 
-// ── 6. DEVICE PIXEL RATIO (da DOM Helper) ────────────────────────────────────
+// ── 6. DEVICE PIXEL RATIO ────────────────────────────────────────────────────
 var dpr = makeNumber(copyFromWindow('_bdDpr')) || 1;
 if (dpr < 1) { botScore += 2; details.push('dpr<1'); }
 var isApple = ua.indexOf('iPhone') !== -1 || ua.indexOf('iPad') !== -1;
 if (isApple && dpr < 2) { botScore += 3; details.push('appleDprAnomaly'); }
 
-// ── 7. TOUCH vs USER AGENT (da DOM Helper) ───────────────────────────────────
+// ── 7. TOUCH vs USER AGENT ────────────────────────────────────────────────────
 var isMobile    = uaLower.indexOf('mobi')    !== -1 ||
                   uaLower.indexOf('android') !== -1 ||
                   ua.indexOf('iPhone')       !== -1 ||
@@ -72,14 +79,14 @@ var hasTouch    = touchPoints > 0;
 if (isMobile && !hasTouch)                       { botScore += 3; details.push('mobileUAnoTouch');         }
 if (!isMobile && hasTouch && screenWidth < 500)  { botScore += 2; details.push('desktopUAmobileViewport'); }
 
-// ── 8. CANVAS (da DOM Helper) ─────────────────────────────────────────────────
+// ── 8. CANVAS ────────────────────────────────────────────────────────────────
 var canvasScore = makeInteger(copyFromWindow('_bdCanvasScore')) || 0;
 if (canvasScore > 0) {
   botScore += canvasScore;
   details.push(canvasScore >= 3 ? 'canvasEmpty' : 'canvasBlocked');
 }
 
-// ── 9. WEBGL (da DOM Helper) ──────────────────────────────────────────────────
+// ── 9. WEBGL ─────────────────────────────────────────────────────────────────
 var webglScore = makeInteger(copyFromWindow('_bdWebGLScore')) || 0;
 if (webglScore > 0) {
   botScore += webglScore;
@@ -88,7 +95,7 @@ if (webglScore > 0) {
   else                       { details.push('webglError');       }
 }
 
-// ── 10. WINDOW.CHROME (da DOM Helper) ────────────────────────────────────────
+// ── 10. WINDOW.CHROME ────────────────────────────────────────────────────────
 var isChrome     = ua.indexOf('Chrome')   !== -1 &&
                    ua.indexOf('Chromium') === -1 &&
                    ua.indexOf('Edge')     === -1 &&
@@ -96,26 +103,48 @@ var isChrome     = ua.indexOf('Chrome')   !== -1 &&
 var hasChromeObj = copyFromWindow('_bdHasChromeObj');
 if (isChrome && !hasChromeObj) { botScore += 3; details.push('chromeMissing'); }
 
-// ── 11. LINGUA E TIMEZONE (da DOM Helper) ────────────────────────────────────
+// ── 11. LINGUA E TIMEZONE ─────────────────────────────────────────────────────
 var lang = makeString(copyFromWindow('_bdLanguage')) || '';
 var tz   = makeString(copyFromWindow('_bdTimezone')) || '';
 if (!lang)                { botScore += 2; details.push('noLanguage');      }
 if (lang && tz === 'UTC') { botScore += 2; details.push('langTimezoneUTC'); }
 
-// ── 12. PERMISSIONS (da DOM Helper) ──────────────────────────────────────────
+// ── 12. PERMISSIONS ───────────────────────────────────────────────────────────
 if (copyFromWindow('_bdNotificationsDenied') === true) { botScore += 1; details.push('notificationsDenied'); }
 
-// ── 13. MOUSE E SCROLL (da DOM Helper) ───────────────────────────────────────
+// ── 13. MOUSE E SCROLL ────────────────────────────────────────────────────────
 if (copyFromWindow('_bdInit') === true) {
   if (copyFromWindow('_bdMouseMoved') === false) { botScore += 2; details.push('noMouseMove'); }
   if (copyFromWindow('_bdScrolled')   === false) { botScore += 1; details.push('noScroll');    }
+}
+
+// ── v4 SIGNAL #2: SYNTHETIC MOUSE EVENTS (event.isTrusted = false) ───────────
+var untrusted = makeInteger(copyFromWindow('_bdMouseUntrustedCount')) || 0;
+if (untrusted > 0) { botScore += 4; details.push('syntheticMouse=' + untrusted); }
+
+// ── v4 SIGNAL #3: SYNTHETIC SCROLL EVENTS ────────────────────────────────────
+var scrUntrusted = makeInteger(copyFromWindow('_bdScrollUntrustedCount')) || 0;
+if (scrUntrusted > 0) { botScore += 3; details.push('syntheticScroll'); }
+
+// ── v4 SIGNAL #4: MOUSE ENTROPY (movimento bot-like) ─────────────────────────
+var entropy = makeNumber(copyFromWindow('_bdMouseEntropy'));
+if (entropy >= 0 && entropy < 20 && copyFromWindow('_bdMouseTrustedCount') > 5) {
+  botScore += 2;
+  details.push('lowMouseEntropy=' + entropy);
+}
+
+// ── v4 SIGNAL #5: FIRST MOUSE TOO FAST (bot inietta evento immediato) ────────
+var fmDelay = makeNumber(copyFromWindow('_bdFirstMouseDelay'));
+if (fmDelay > 0 && fmDelay < 50) {
+  botScore += 2;
+  details.push('mouseTooFast=' + fmDelay + 'ms');
 }
 
 // ── RISULTATO ─────────────────────────────────────────────────────────────────
 var result = (botScore >= threshold) ? 'possible bot' : 'normal user';
 
 if (debugMode || copyFromWindow('location.hostname') === 'localhost') {
-  logToConsole('[BotDetect] score=' + botScore +
+  logToConsole('[BotDetect v4] score=' + botScore +
                ' threshold=' + threshold +
                ' | ' + details.join(', ') +
                ' | ' + result);
@@ -157,6 +186,12 @@ ___WEB_PERMISSIONS___
               { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"_bdNotificationsDenied"},{"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
               { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"_bdMouseMoved"},         {"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
               { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"_bdScrolled"},           {"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
+              { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"_bdMouseUntrustedCount"},{"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
+              { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"_bdScrollUntrustedCount"},{"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
+              { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"_bdMouseEntropy"},       {"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
+              { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"_bdMouseTrustedCount"},  {"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
+              { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"_bdFirstMouseDelay"},    {"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
+              { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"_bdLiveCheckPassed"},    {"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] },
               { "type": 3, "mapKey": [{"type":1,"string":"key"},{"type":1,"string":"read"},{"type":1,"string":"write"},{"type":1,"string":"execute"}], "mapValue": [{"type":1,"string":"location.hostname"},     {"type":8,"boolean":true},{"type":8,"boolean":false},{"type":8,"boolean":false}] }
             ]
           }

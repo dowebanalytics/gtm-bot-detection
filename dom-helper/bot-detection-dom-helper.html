@@ -1,110 +1,230 @@
 <script>
 (function() {
   if (window._bdHelperLoaded) return;
-  window._bdHelperLoaded = true;
 
-  // ── CONFIGURAZIONE ────────────────────────────────────────────────────────
-  window._bdThreshold = 5;     // 3=aggressiva | 5=default | 7=conservativa
-  window._bdDebug     = false; // true = log [BotDetect] in console su tutti i domini
-  window._bdInit      = true;
+  // ╔════════════════════════════════════════════════════════════════════════╗
+  // ║  Bot Detection v4 — Hardened DOM Helper                                ║
+  // ║  DO Web Analytics / Tag Manager Italia                                 ║
+  // ║                                                                         ║
+  // ║  Miglioramenti v4 vs v3:                                                ║
+  // ║  1. Closure namespace + Object.defineProperty (anti-tampering)         ║
+  // ║  2. event.isTrusted check (distingue mouse/scroll reali da sintetici)  ║
+  // ║  3. Mouse entropy + timing init (segnali comportamentali avanzati)     ║
+  // ║  4. Integrity hash + live check (rileva manipolazione runtime)         ║
+  // ╚════════════════════════════════════════════════════════════════════════╝
 
-  // ── DIMENSIONI SCHERMO E BROWSER ──────────────────────────────────────────
-  window._bdScreenWidth   = (typeof screen.width  === 'number' && screen.width  > 0) ? screen.width  : 0;
-  window._bdScreenHeight  = (typeof screen.height === 'number' && screen.height > 0) ? screen.height : 0;
-  window._bdBrowserWidth  = (typeof window.innerWidth  === 'number' && window.innerWidth  > 0) ? window.innerWidth  : 99999;
-  window._bdBrowserHeight = (typeof window.innerHeight === 'number' && window.innerHeight > 0) ? window.innerHeight : 99999;
+  // ── STATO INTERNO IN CLOSURE — non accessibile dal bot ─────────────────────
+  var S = {
+    threshold: 5,
+    debug: false,
+    init: true,
+    helperLoaded: true,
+    mouseMoved: false,
+    scrolled: false,
+    mouseTrustedCount: 0,
+    scrollTrustedCount: 0,
+    mouseUntrustedCount: 0,
+    scrollUntrustedCount: 0,
+    mouseEntropyScore: -1,
+    mousePoints: [],
+    initTime: 0,
+    firstMouseDelay: 0,
+    notificationsDenied: false,
+    canvasScore: 0,
+    webglScore: 0,
+    pluginsLen: -1,
+    colorDepth: 0,
+    dpr: 1,
+    timezone: '',
+    language: '',
+    ua: '',
+    webdriver: false,
+    hasChromeObj: true,
+    maxTouchPoints: 0,
+    screenWidth: 0,
+    screenHeight: 0,
+    browserWidth: 0,
+    browserHeight: 0,
+    integrityHash: ''
+  };
 
-  // ── TIMEZONE ──────────────────────────────────────────────────────────────
-  try {
-    window._bdTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-  } catch(e) {
-    window._bdTimezone = '';
-  }
+  // ── TIMING INIT ────────────────────────────────────────────────────────────
+  S.initTime = (window.performance && performance.now) ? performance.now() : Date.now();
 
-  // ── PLUGIN COUNT ──────────────────────────────────────────────────────────
-  window._bdPluginsLen = (navigator.plugins) ? navigator.plugins.length : -1;
+  // ── CONFIGURAZIONE (modificabile qui) ──────────────────────────────────────
+  S.threshold = 5;     // 3=aggressiva | 5=default | 7=conservativa
+  S.debug     = false; // log [BotDetect] in console
 
-  // ── COLOR DEPTH ───────────────────────────────────────────────────────────
-  window._bdColorDepth = screen.colorDepth || 0;
+  // ── CATTURA AMBIENTE ───────────────────────────────────────────────────────
+  S.ua             = navigator.userAgent || '';
+  S.webdriver      = (navigator.webdriver === true);
+  S.colorDepth     = screen.colorDepth || 0;
+  S.dpr            = window.devicePixelRatio || 1;
+  S.maxTouchPoints = navigator.maxTouchPoints || 0;
+  S.language       = navigator.language || '';
+  S.hasChromeObj   = (typeof window.chrome !== 'undefined');
+  S.screenWidth    = (typeof screen.width  === 'number' && screen.width  > 0) ? screen.width  : 0;
+  S.screenHeight   = (typeof screen.height === 'number' && screen.height > 0) ? screen.height : 0;
+  S.browserWidth   = (typeof window.innerWidth  === 'number' && window.innerWidth  > 0) ? window.innerWidth  : 99999;
+  S.browserHeight  = (typeof window.innerHeight === 'number' && window.innerHeight > 0) ? window.innerHeight : 99999;
+  S.pluginsLen     = (navigator.plugins) ? navigator.plugins.length : -1;
 
-  // ── DEVICE PIXEL RATIO ────────────────────────────────────────────────────
-  window._bdDpr = window.devicePixelRatio || 1;
-
-  // ── USER AGENT ────────────────────────────────────────────────────────────
-  window._bdUA = navigator.userAgent || '';
-
-  // ── TOUCH POINTS ─────────────────────────────────────────────────────────
-  window._bdMaxTouchPoints = navigator.maxTouchPoints || 0;
-
-  // ── LANGUAGE ──────────────────────────────────────────────────────────────
-  window._bdLanguage = navigator.language || '';
-
-  // ── WEBDRIVER ─────────────────────────────────────────────────────────────
-  window._bdWebdriver = (navigator.webdriver === true);
-
-  // ── WINDOW.CHROME ─────────────────────────────────────────────────────────
-  window._bdHasChromeObj = (typeof window.chrome !== 'undefined');
-
-  // ── MOUSE / SCROLL LISTENERS (IE11 compatible) ────────────────────────────
-  window._bdMouseMoved = false;
-  window._bdScrolled   = false;
-
-  document.addEventListener('mousemove', function handler() {
-    window._bdMouseMoved = true;
-    document.removeEventListener('mousemove', handler);
-  });
-  document.addEventListener('scroll', function handler() {
-    window._bdScrolled = true;
-    document.removeEventListener('scroll', handler);
-  });
+  try { S.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch(e) {}
 
   // ── CANVAS FINGERPRINT ────────────────────────────────────────────────────
-  // 0 = rendering ok | 1 = canvas bloccato (+1) | 3 = canvas vuoto (+3)
   try {
-    var canvas = document.createElement('canvas');
-    var ctx    = canvas.getContext('2d');
-    ctx.textBaseline = 'top';
-    ctx.font         = '14px Arial';
+    var c = document.createElement('canvas');
+    var ctx = c.getContext('2d');
+    ctx.textBaseline = 'top'; ctx.font = '14px Arial';
     ctx.fillText('BotDetect', 2, 2);
-    window._bdCanvasScore = (canvas.toDataURL().length < 200) ? 3 : 0;
-  } catch(e) {
-    window._bdCanvasScore = 1;
-  }
+    S.canvasScore = (c.toDataURL().length < 200) ? 3 : 0;
+  } catch(e) { S.canvasScore = 1; }
 
   // ── WEBGL RENDERER ────────────────────────────────────────────────────────
-  // 0 = GPU ok | 1 = errore (+1) | 2 = WebGL assente (+2) | 3 = software GPU (+3)
   try {
     var gl = document.createElement('canvas').getContext('webgl') ||
              document.createElement('canvas').getContext('experimental-webgl');
-    if (!gl) {
-      window._bdWebGLScore = 2;
-    } else {
+    if (!gl) { S.webglScore = 2; }
+    else {
       var di = gl.getExtension('WEBGL_debug_renderer_info');
       if (di) {
         var r = (gl.getParameter(di.UNMASKED_RENDERER_WEBGL) || '') +
                 (gl.getParameter(di.UNMASKED_VENDOR_WEBGL)   || '');
-        window._bdWebGLScore = (r.indexOf('SwiftShader')  !== -1 ||
-                                r.indexOf('llvmpipe')     !== -1 ||
-                                r.indexOf('VirtualBox')   !== -1 ||
-                                r.indexOf('VMware')       !== -1 ||
-                                r.indexOf('Mesa')         !== -1) ? 3 : 0;
-      } else {
-        window._bdWebGLScore = 0;
+        S.webglScore = (r.indexOf('SwiftShader')  !== -1 ||
+                        r.indexOf('llvmpipe')     !== -1 ||
+                        r.indexOf('VirtualBox')   !== -1 ||
+                        r.indexOf('VMware')       !== -1 ||
+                        r.indexOf('Mesa')         !== -1) ? 3 : 0;
       }
     }
-  } catch(e) {
-    window._bdWebGLScore = 1;
-  }
+  } catch(e) { S.webglScore = 1; }
 
   // ── PERMISSIONS API (async) ───────────────────────────────────────────────
-  window._bdNotificationsDenied = false;
   try {
     if (navigator.permissions && navigator.permissions.query) {
       navigator.permissions.query({ name: 'notifications' }).then(function(res) {
-        window._bdNotificationsDenied = (res.state === 'denied');
+        S.notificationsDenied = (res.state === 'denied');
       });
     }
   } catch(e) {}
+
+  // ── BEHAVIORAL LISTENERS — event.isTrusted + entropy ──────────────────────
+  function mouseHandler(e) {
+    if (!e.isTrusted) { S.mouseUntrustedCount++; return; }
+    S.mouseTrustedCount++;
+    if (S.firstMouseDelay === 0) {
+      var now = (window.performance && performance.now) ? performance.now() : Date.now();
+      S.firstMouseDelay = now - S.initTime;
+    }
+    S.mouseMoved = true;
+    if (S.mousePoints.length < 10) {
+      S.mousePoints.push({ x: e.clientX, y: e.clientY, t: Date.now() });
+    }
+    if (S.mouseTrustedCount >= 8) {
+      computeEntropy();
+      document.removeEventListener('mousemove', mouseHandler);
+    }
+  }
+  function scrollHandler(e) {
+    if (!e.isTrusted) { S.scrollUntrustedCount++; return; }
+    S.scrollTrustedCount++;
+    S.scrolled = true;
+    document.removeEventListener('scroll', scrollHandler);
+  }
+  document.addEventListener('mousemove', mouseHandler);
+  document.addEventListener('scroll', scrollHandler);
+
+  function computeEntropy() {
+    if (S.mousePoints.length < 3) { S.mouseEntropyScore = 0; return; }
+    var sumCurv = 0;
+    var timeDeltas = [];
+    for (var i = 2; i < S.mousePoints.length; i++) {
+      var p0 = S.mousePoints[i-2], p1 = S.mousePoints[i-1], p2 = S.mousePoints[i];
+      var dx1 = p1.x - p0.x, dy1 = p1.y - p0.y;
+      var dx2 = p2.x - p1.x, dy2 = p2.y - p1.y;
+      sumCurv += Math.abs(dx2 - dx1) + Math.abs(dy2 - dy1);
+      timeDeltas.push(p2.t - p1.t);
+    }
+    var avgT = 0;
+    for (var j = 0; j < timeDeltas.length; j++) avgT += timeDeltas[j];
+    avgT = avgT / timeDeltas.length;
+    var varT = 0;
+    for (var k = 0; k < timeDeltas.length; k++) varT += Math.pow(timeDeltas[k] - avgT, 2);
+    S.mouseEntropyScore = Math.floor(sumCurv + Math.sqrt(varT));
+  }
+
+  // ── INTEGRITY HASH (djb2-like) ────────────────────────────────────────────
+  function computeHash() {
+    var s = S.screenWidth + '|' + S.screenHeight + '|' +
+            S.browserWidth + '|' + S.browserHeight + '|' +
+            S.ua.length + '|' + S.language + '|' +
+            S.pluginsLen + '|' + S.timezone + '|' +
+            S.colorDepth + '|' + S.dpr + '|' +
+            S.webdriver + '|' + S.hasChromeObj;
+    var h = 5381;
+    for (var i = 0; i < s.length; i++) {
+      h = ((h << 5) + h) + s.charCodeAt(i);
+      h = h & 0xFFFFFFFF;
+    }
+    return Math.abs(h).toString(36);
+  }
+  S.integrityHash = computeHash();
+
+  // ── ESPONI STATO COME PROPRIETÀ READ-ONLY (anti-tampering) ────────────────
+  // configurable:false → bot non può ridefinire la proprietà
+  // accessor con solo getter → bot non può sovrascrivere il valore
+  function expose(name, getter) {
+    try {
+      Object.defineProperty(window, name, {
+        get: getter,
+        set: function() { /* silently ignore */ },
+        configurable: false,
+        enumerable: true
+      });
+    } catch(e) {
+      window[name] = getter();
+    }
+  }
+
+  // Flag base (v3 compatible)
+  expose('_bdInit',                 function() { return S.init; });
+  expose('_bdThreshold',            function() { return S.threshold; });
+  expose('_bdDebug',                function() { return S.debug; });
+  expose('_bdHelperLoaded',         function() { return S.helperLoaded; });
+  expose('_bdScreenWidth',          function() { return S.screenWidth; });
+  expose('_bdScreenHeight',         function() { return S.screenHeight; });
+  expose('_bdBrowserWidth',         function() { return S.browserWidth; });
+  expose('_bdBrowserHeight',        function() { return S.browserHeight; });
+  expose('_bdWebdriver',            function() { return S.webdriver; });
+  expose('_bdUA',                   function() { return S.ua; });
+  expose('_bdColorDepth',           function() { return S.colorDepth; });
+  expose('_bdDpr',                  function() { return S.dpr; });
+  expose('_bdMaxTouchPoints',       function() { return S.maxTouchPoints; });
+  expose('_bdLanguage',             function() { return S.language; });
+  expose('_bdHasChromeObj',         function() { return S.hasChromeObj; });
+  expose('_bdTimezone',             function() { return S.timezone; });
+  expose('_bdPluginsLen',           function() { return S.pluginsLen; });
+  expose('_bdCanvasScore',          function() { return S.canvasScore; });
+  expose('_bdWebGLScore',           function() { return S.webglScore; });
+  expose('_bdNotificationsDenied',  function() { return S.notificationsDenied; });
+  expose('_bdMouseMoved',           function() { return S.mouseMoved; });
+  expose('_bdScrolled',             function() { return S.scrolled; });
+
+  // Nuovi segnali v4
+  expose('_bdMouseUntrustedCount',  function() { return S.mouseUntrustedCount; });
+  expose('_bdScrollUntrustedCount', function() { return S.scrollUntrustedCount; });
+  expose('_bdMouseEntropy',         function() { return S.mouseEntropyScore; });
+  expose('_bdFirstMouseDelay',      function() { return S.firstMouseDelay; });
+  expose('_bdInitTime',             function() { return S.initTime; });
+  expose('_bdIntegrityHash',        function() { return S.integrityHash; });
+
+  // Live check: rileva tampering post-init di screen/navigator
+  expose('_bdLiveCheckPassed', function() {
+    return (screen.width === S.screenWidth &&
+            screen.height === S.screenHeight &&
+            navigator.webdriver === S.webdriver &&
+            (navigator.userAgent || '') === S.ua);
+  });
 
 })();
 </script>
