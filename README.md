@@ -33,7 +33,9 @@ Sviluppato da [DO Web Analytics](https://dowebanalytics.com) / [Tag Manager Ital
 
 ### 1. DOM Helper
 
-**Tags → New → Custom HTML** → incolla il contenuto di `dom-helper/bot-detection-dom-helper.html` → trigger **DOM Ready** → priorità **20**.
+**Tags → New → Custom HTML** → incolla il contenuto di `dom-helper/bot-detection-dom-helper.html` → trigger **Initialization** → priorità **100**.
+
+> ⚠️ **Trigger consigliato: Initialization** (non DOM Ready). In questo modo i flag `_bd*` sono disponibili già al momento del Page View, e la variabile può essere usata su qualsiasi trigger — incluso `All Pages` — senza dover configurare Tag Sequencing su ogni tag.
 
 Configurazione modificabile in cima al file:
 ```js
@@ -51,9 +53,9 @@ Al popup "Permission changes detected" clicca **Approve all**.
 
 **Variables → New → Bot Detection Result** (seleziona il template appena importato) → Salva.
 
-### 4. Tag Sequencing sui tag critici
+### 4. Tag Sequencing su tag critici (opzionale)
 
-Per i tag dove sbagliare è costoso (conversion GA4, form submit, checkout), configura il DOM Helper come **setup tag**:
+Con il DOM Helper su **Initialization + priorità 100** la variabile è già disponibile per qualsiasi trigger, anche Page View. Il Tag Sequencing rimane comunque utile come **belt-and-suspenders** sui tag critici (conversion GA4, form submit checkout, payment, fraud check):
 
 1. Apri il tag (es. GA4 Event "purchase")
 2. **Advanced Settings → Tag Sequencing**
@@ -62,7 +64,7 @@ Per i tag dove sbagliare è costoso (conversion GA4, form submit, checkout), con
 5. Spunta **Don't fire [Tag] if [Setup Tag] fails or is paused**
 6. Salva
 
-Questo garantisce che il DOM Helper esegua sempre prima del tag dipendente, indipendentemente dal trigger usato.
+La guard `_bdHelperLoaded` nel DOM Helper rende il setup idempotente: nessuna penalità di performance.
 
 ### 5. Pubblicazione
 
@@ -82,26 +84,36 @@ Submit & Publish il container. La variabile `{{Bot Detection Result}}` restituis
 
 ---
 
-## Priorità vs Tag Sequencing
+## Strategia di esecuzione del DOM Helper
 
-GTM offre due meccanismi per ordinare l'esecuzione dei tag. Il sistema usa entrambi a seconda del caso:
+Con il DOM Helper su **Initialization + priorità 100**, i flag `_bd*` sono disponibili già al momento del Page View. Questa è la configurazione consigliata perché la variabile può essere usata su qualsiasi trigger GTM (Page View, All Pages, DOM Ready, eventi utente) senza dover configurare nulla sui singoli tag.
 
-| Tecnica | Cosa fa | Quando usarla |
-|---|---|---|
-| **Priorità** (Advanced Settings → Tag firing priority) | Ordina i tag che condividono lo stesso trigger. Hint asincrono. | Tag con trigger Click, Form Submit, Scroll Depth, Timer — firano sempre dopo DOM Ready quindi la priorità basta |
-| **Tag Sequencing** (Advanced Settings → Tag Sequencing) | Dipendenza esplicita garantita: il setup tag fira prima del tag principale. | Tag su Page View, conversion critiche, lead form, checkout — quando sbagliare è costoso |
+### Flusso eventi GTM
 
-### Quando serve Tag Sequencing
+```
+1. consent_initialization
+2. initialization           ← DOM Helper fira qui (priority 100)
+3. gtm.js / pageview        ← variabile già disponibile
+4. gtm.dom / DOM Ready
+5. gtm.load / Window Loaded
+6. eventi utente (click, scroll, form submit, custom events)
+```
 
-Se un tag fira su **Page View** o **All Pages** (più precoce di DOM Ready), `window._bd*` sarà ancora `undefined` e la variabile restituirà uno score parziale di 3 (solo `noMouseMove + noScroll`) — sotto soglia → classificato come `normal user` anche se è un bot.
+### Quando aggiungere Tag Sequencing
 
-In questi casi configura **Tag Sequencing** sul tag dipendente per garantire che il DOM Helper esegua prima.
+| Scenario | Configurazione consigliata |
+|---|---|
+| Setup standard | DOM Helper su Initialization + priorità 100 — sufficiente |
+| Tag critici (conversion GA4, form submit, checkout) | + Tag Sequencing come belt-and-suspenders |
+| Container con bot filtering pervasivo | + Tag Sequencing su tutti i tag rilevanti |
 
-### Approccio raccomandato
+Il Tag Sequencing rimane lo strumento giusto per garantire l'esecuzione del DOM Helper anche in scenari edge case. La guard idempotente rende il setup gratuito in termini di performance.
 
-- **Default**: priorità 20 sul DOM Helper (semplice, sufficiente nel 95% dei casi)
-- **Tag critici** (conversion GA4, form submit, checkout, fraud check): **aggiungi Tag Sequencing** come belt-and-suspenders
-- **Tag su Page View**: Tag Sequencing **obbligatoria**
+### Limite: segnali comportamentali su Page View
+
+Su Page View i listener mouse/scroll non hanno ancora avuto tempo di catturare interazioni utente, quindi `noMouseMove (+2)` e `noScroll (+1)` saranno sempre attivi. Ogni utente parte con uno **score base +3**.
+
+Con soglia default 5: un utente reale con fingerprint pulito = 3 (USER), un bot con anche solo noPlugins = 5 (BOT). Le metriche di detection rimangono valide — ma per scenari ad alta criticità considera di valutare la variabile anche su un evento utente successivo (Add to Cart, Click) per beneficiare dei segnali comportamentali pieni.
 
 ---
 
