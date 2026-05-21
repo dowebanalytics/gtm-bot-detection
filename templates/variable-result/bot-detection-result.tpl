@@ -154,7 +154,9 @@ if (fmDelay > 0 && fmDelay < 50) {
 }
 
 // ── RISULTATO ─────────────────────────────────────────────────────────────────
-var result = (botScore >= threshold) ? 'possible bot' : 'normal user';
+var result = (botScore >= threshold)
+  ? 'possible_bot | ' + botScore + ' | ' + details.join(',')
+  : 'normal_user';
 
 if (debugMode) {
   logToConsole('[BotDetect v4] score=' + botScore +
