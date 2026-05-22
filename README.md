@@ -150,7 +150,9 @@ Per verificare il funzionamento senza bot reali, crea un tag **Custom HTML** in 
 
 ```html
 <script>
-  window._bdResultCache     = null;  // reset cache — forza ricalcolo
+  // Nota: i _bd* sono getter live definiti dal DOM Helper via Object.defineProperty.
+  // I valori statici iniettati qui vengono letti solo se il DOM Helper non è ancora girato.
+  // Per un test affidabile, usa priority 999 su Initialization (dopo il DOM Helper a 100).
   window._bdInit            = true;  // abilita check mouse/scroll
   window._bdWebdriver       = true;  // +5
   window._bdLiveCheckPassed = false; // +5
@@ -182,8 +184,9 @@ Per verificare il funzionamento senza bot reali, crea un tag **Custom HTML** in 
 
 **Verifica in console:**
 ```js
-window._bdResultCache
-// { status: "possible_bot", score: 18, signals: "tmp|wdt|dh0|np|nmm|ns" }
+// La variabile ricalcola sempre (no cache) — leggi direttamente l'oggetto:
+{{Bot Detection Result}}
+// oppure dalla console tramite Tag Assistant Preview
 ```
 
 ---

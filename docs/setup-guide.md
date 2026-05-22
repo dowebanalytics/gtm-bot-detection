@@ -86,7 +86,7 @@ Tag: GA4 Event - Purchase
     │   └── Fire a tag before this tag fires:
     │       └── Setup Tag: Bot Detection DOM Helper
     │           └── ☑ Don't fire if setup tag fails
-    └── Trigger condition: {{Bot Detection Result}} EQUALS "normal user"
+    └── Trigger condition: {{Bot - Status}} EQUALS "normal_user"
 ```
 
 ## Step 5 — Pubblicazione
@@ -100,7 +100,7 @@ Tag: GA4 Event - Purchase
 Apri il sito con Tag Assistant attivo. Nella console (con `_bdDebug = true`):
 
 ```
-[BotDetect] score=3 threshold=5 | noM,noS | normal user
+[BotDetect v4] score=3 threshold=5 | status=normal_user | signals=
 ```
 
 Verifica che siano presenti in `window` **già al momento del Page View**:
@@ -112,18 +112,56 @@ Verifica che siano presenti in `window` **già al momento del Page View**:
 
 ## Uso della variabile
 
-Usa `{{Bot Detection Result}}` come condizione di trigger su tag che vuoi bloccare per i bot:
-
-```
-Trigger condition: {{Bot Detection Result}} EQUALS "normal user"
-```
-
-Oppure come custom dimension GA4 per analizzare il traffico bot:
+La variabile restituisce un oggetto con tre proprietà:
 
 ```js
-gtag('event', 'page_view', {
-  bot_detection: {{Bot Detection Result}}
-});
+// utente normale
+{ status: "normal_user", score: 0, signals: "" }
+
+// bot rilevato
+{ status: "possible_bot", score: 12, signals: "tmp|wdt|dh0|np|nmm|ns" }
+```
+
+### Variabili CJS per estrarre i singoli valori
+
+Crea tre variabili **Custom JavaScript** in GTM:
+
+```js
+// Bot - Status
+function() {
+  var r = {{Bot Detection Result}};
+  return r ? r.status : 'normal_user';
+}
+
+// Bot - Score
+function() {
+  var r = {{Bot Detection Result}};
+  return r ? r.score : 0;
+}
+
+// Bot - Signals
+function() {
+  var r = {{Bot Detection Result}};
+  return r ? r.signals : '';
+}
+```
+
+### Custom Dimensions GA4
+
+Nella Event Settings variable mappa:
+
+| Parametro GA4 | Variabile GTM |
+|---|---|
+| `bot_status` | `{{Bot - Status}}` |
+| `bot_score` | `{{Bot - Score}}` |
+| `bot_signals` | `{{Bot - Signals}}` |
+
+### Trigger condition
+
+Per bloccare i bot su tag critici usa `{{Bot - Status}}`:
+
+```
+Trigger condition: {{Bot - Status}} EQUALS "normal_user"
 ```
 
 ## Trigger e affidabilità dei segnali
@@ -156,12 +194,12 @@ Le permission non sono state approvate al re-import. Soluzione:
 3. Al popup permissions, clicca **Approve all**
 4. Riassocia la variabile
 
-### "Variabile sempre 'possible bot'"
-Verifica con `_bdDebug = true` quali segnali si attivano. Se è `noMouseMove,noScroll` + altri sopra soglia, considera:
+### "Variabile sempre possible_bot"
+Verifica con `_bdDebug = true` quali segnali si attivano. Se `signals` contiene `nmm|ns` + altri sopra soglia, considera:
 - Spostare il trigger di valutazione su un evento utente (Form Submit, Click)
 - Oppure alzare la soglia a 6
 
-### "Variabile sempre 'normal user' anche per bot evidenti"
+### "Variabile sempre normal_user anche per bot evidenti"
 Il DOM Helper potrebbe non essere su Initialization. Verifica:
 1. Console: `window._bdHelperLoaded` deve essere `true` già al Page View
 2. Se è `undefined` al Page View ma `true` dopo, il DOM Helper è su DOM Ready
