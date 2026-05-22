@@ -29,7 +29,6 @@ ___TEMPLATE_PARAMETERS___
 ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
 
 var copyFromWindow  = require('copyFromWindow');
-var setInWindow     = require('setInWindow');
 var makeInteger     = require('makeInteger');
 var makeString      = require('makeString');
 var makeNumber      = require('makeNumber');
@@ -40,13 +39,7 @@ var details   = [];
 var threshold = makeInteger(copyFromWindow('_bdThreshold')) || 5;
 var debugMode = copyFromWindow('_bdDebug') || false;
 
-// ── CACHE — invalida automaticamente quando i segnali comportamentali cambiano ─
-var cached      = copyFromWindow('_bdResultCache');
-var curMouse    = copyFromWindow('_bdMouseMoved');
-var curScrolled = copyFromWindow('_bdScrolled');
-if (cached && cached._mouse === curMouse && cached._scrolled === curScrolled) {
-  return cached;
-}
+// (nessuna cache — i _bd* sono getter live, il ricalcolo è istantaneo)
 
 // ── v4 SIGNAL #1: INTEGRITY CHECK ────────────────────────────────────────────
 if (copyFromWindow('_bdLiveCheckPassed') === false) {
@@ -168,14 +161,10 @@ var status  = isBot ? 'possible_bot' : 'normal_user';
 var signals = isBot ? details.join('|') : '';
 
 var result = {
-  status:   status,
-  score:    isBot ? botScore : 0,
-  signals:  signals,
-  _mouse:   copyFromWindow('_bdMouseMoved'),
-  _scrolled: copyFromWindow('_bdScrolled')
+  status:  status,
+  score:   isBot ? botScore : 0,
+  signals: signals
 };
-
-setInWindow('_bdResultCache', result, true);
 
 if (debugMode) {
   logToConsole('[BotDetect v4] score=' + botScore +
@@ -1347,45 +1336,6 @@ ___WEB_PERMISSIONS___
                   {
                     "type": 8,
                     "boolean": false
-                  },
-                  {
-                    "type": 8,
-                    "boolean": false
-                  }
-                ]
-              },
-              {
-                "type": 3,
-                "mapKey": [
-                  {
-                    "type": 1,
-                    "string": "key"
-                  },
-                  {
-                    "type": 1,
-                    "string": "read"
-                  },
-                  {
-                    "type": 1,
-                    "string": "write"
-                  },
-                  {
-                    "type": 1,
-                    "string": "execute"
-                  }
-                ],
-                "mapValue": [
-                  {
-                    "type": 1,
-                    "string": "_bdResultCache"
-                  },
-                  {
-                    "type": 8,
-                    "boolean": true
-                  },
-                  {
-                    "type": 8,
-                    "boolean": true
                   },
                   {
                     "type": 8,
