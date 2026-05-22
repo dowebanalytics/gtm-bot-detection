@@ -40,9 +40,13 @@ var details   = [];
 var threshold = makeInteger(copyFromWindow('_bdThreshold')) || 5;
 var debugMode = copyFromWindow('_bdDebug') || false;
 
-// ── CACHE — evita riesecuzioni multiple per lo stesso ciclo GTM ───────────────
-var cached = copyFromWindow('_bdResultCache');
-if (cached) return cached;
+// ── CACHE — invalida automaticamente quando i segnali comportamentali cambiano ─
+var cached      = copyFromWindow('_bdResultCache');
+var curMouse    = copyFromWindow('_bdMouseMoved');
+var curScrolled = copyFromWindow('_bdScrolled');
+if (cached && cached._mouse === curMouse && cached._scrolled === curScrolled) {
+  return cached;
+}
 
 // ── v4 SIGNAL #1: INTEGRITY CHECK ────────────────────────────────────────────
 if (copyFromWindow('_bdLiveCheckPassed') === false) {
@@ -164,9 +168,11 @@ var status  = isBot ? 'possible_bot' : 'normal_user';
 var signals = isBot ? details.join('|') : '';
 
 var result = {
-  status:  status,
-  score:   isBot ? botScore : 0,
-  signals: signals
+  status:   status,
+  score:    isBot ? botScore : 0,
+  signals:  signals,
+  _mouse:   copyFromWindow('_bdMouseMoved'),
+  _scrolled: copyFromWindow('_bdScrolled')
 };
 
 setInWindow('_bdResultCache', result, true);
