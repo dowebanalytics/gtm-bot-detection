@@ -161,7 +161,7 @@ if (fmDelay > 0 && fmDelay < 50) {
 // ── RISULTATO ─────────────────────────────────────────────────────────────────
 var isBot   = botScore >= threshold;
 var status  = isBot ? 'possible_bot' : 'normal_user';
-var signals = isBot ? details.join(',') : '';
+var signals = isBot ? details.join('|') : '';
 
 var result = {
   status:  status,
