@@ -1,4 +1,4 @@
-﻿___TERMS_OF_SERVICE___
+___TERMS_OF_SERVICE___
 
 By creating or modifying this file you agree to Google Tag Manager's Community
 Template Gallery Developer Terms of Service available at
@@ -29,6 +29,7 @@ ___TEMPLATE_PARAMETERS___
 ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
 
 var copyFromWindow  = require('copyFromWindow');
+var setInWindow     = require('setInWindow');
 var makeInteger     = require('makeInteger');
 var makeString      = require('makeString');
 var makeNumber      = require('makeNumber');
@@ -38,6 +39,10 @@ var botScore  = 0;
 var details   = [];
 var threshold = makeInteger(copyFromWindow('_bdThreshold')) || 5;
 var debugMode = copyFromWindow('_bdDebug') || false;
+
+// ── CACHE — evita riesecuzioni multiple per lo stesso ciclo GTM ───────────────
+var cached = copyFromWindow('_bdResultCache');
+if (cached) return cached;
 
 // ── v4 SIGNAL #1: INTEGRITY CHECK ────────────────────────────────────────────
 if (copyFromWindow('_bdLiveCheckPassed') === false) {
@@ -154,15 +159,23 @@ if (fmDelay > 0 && fmDelay < 50) {
 }
 
 // ── RISULTATO ─────────────────────────────────────────────────────────────────
-var result = (botScore >= threshold)
-  ? 'possible_bot | ' + botScore + ' | ' + details.join(',')
-  : 'normal_user';
+var isBot   = botScore >= threshold;
+var status  = isBot ? 'possible_bot' : 'normal_user';
+var signals = isBot ? details.join(',') : '';
+
+var result = {
+  status:  status,
+  score:   isBot ? botScore : 0,
+  signals: signals
+};
+
+setInWindow('_bdResultCache', result, true);
 
 if (debugMode) {
   logToConsole('[BotDetect v4] score=' + botScore +
                ' threshold=' + threshold +
-               ' | ' + details.join(', ') +
-               ' | ' + result);
+               ' | status=' + status +
+               ' | signals=' + signals);
 }
 
 return result;
@@ -1328,6 +1341,45 @@ ___WEB_PERMISSIONS___
                   {
                     "type": 8,
                     "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "_bdResultCache"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
                   },
                   {
                     "type": 8,
