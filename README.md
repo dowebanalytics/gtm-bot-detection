@@ -68,7 +68,30 @@ La guard `_bdHelperLoaded` nel DOM Helper rende il setup idempotente: nessuna pe
 
 ### 5. Pubblicazione
 
-Submit & Publish il container. La variabile `{{Bot Detection Result}}` restituisce `'possible bot'` o `'normal user'`.
+Submit & Publish il container. La variabile `{{Bot Detection Result}}` restituisce un oggetto con tre proprietà:
+
+```js
+// utente normale
+{ status: "normal_user", score: 0, signals: "" }
+
+// bot rilevato
+{ status: "possible_bot", score: 18, signals: "tmp|wdt|dh0|np|nmm|ns" }
+```
+
+Le tre proprietà si leggono con variabili **Custom JavaScript** in GTM:
+
+```js
+// Bot Detection - Status
+function() { return {{Bot Detection Result}}.status || 'normal_user'; }
+
+// Bot Detection - Score
+function() { return {{Bot Detection Result}}.score || 0; }
+
+// Bot Detection - Signals
+function() { return {{Bot Detection Result}}.signals || ''; }
+```
+
+Mappa ciascuna a una **Custom Dimension** in GA4 per filtrare e segmentare il traffico bot nei report.
 
 ---
 
@@ -114,6 +137,54 @@ Il Tag Sequencing rimane lo strumento giusto per garantire l'esecuzione del DOM 
 Su Page View i listener mouse/scroll non hanno ancora avuto tempo di catturare interazioni utente, quindi `noMouseMove (+2)` e `noScroll (+1)` saranno sempre attivi. Ogni utente parte con uno **score base +3**.
 
 Con soglia default 5: un utente reale con fingerprint pulito = 3 (USER), un bot con anche solo noPlugins = 5 (BOT). Le metriche di detection rimangono valide — ma per scenari ad alta criticità considera di valutare la variabile anche su un evento utente successivo (Add to Cart, Click) per beneficiare dei segnali comportamentali pieni.
+
+---
+
+## Testing
+
+### Test con Custom HTML in GTM Preview
+
+Per verificare il funzionamento senza bot reali, crea un tag **Custom HTML** in GTM che simula i segnali più comuni:
+
+**Tag: `[DEBUG] Bot Detection Injector`**
+
+```html
+<script>
+  window._bdResultCache     = null;  // reset cache — forza ricalcolo
+  window._bdInit            = true;  // abilita check mouse/scroll
+  window._bdWebdriver       = true;  // +5
+  window._bdLiveCheckPassed = false; // +5
+  window._bdPluginsLen      = 0;     // +2
+  window._bdMouseMoved      = false; // +2
+  window._bdScrolled        = false; // +1
+  window._bdScreenWidth     = 1920;
+  window._bdScreenHeight    = 1080;
+  window._bdBrowserWidth    = 1920;
+  window._bdBrowserHeight   = 1080;  // deltaHeight<=0 → +3
+  window._bdThreshold       = 5;
+  window._bdDebug           = true;  // attiva log in console
+</script>
+```
+
+| Campo GTM | Valore |
+|---|---|
+| Trigger | **Initialization** |
+| Firing Priority | `999` |
+| Nome | `[DEBUG] Bot Detection Injector` |
+
+> ⚠️ **Rimuovi o disabilita questo tag prima di pubblicare** — altrimenti tutto il traffico reale risulterà bot.
+
+**Verifica in GTM Preview:**
+1. Attiva Preview → carica la pagina
+2. Clicca sull'evento **Page View** nel Tag Assistant
+3. Vai su **Variables** → cerca `Bot Detection Result`
+4. Atteso: `{ status: "possible_bot", score: 18, signals: "tmp|wdt|dh0|np|nmm|ns" }`
+
+**Verifica in console:**
+```js
+window._bdResultCache
+// { status: "possible_bot", score: 18, signals: "tmp|wdt|dh0|np|nmm|ns" }
+```
 
 ---
 
