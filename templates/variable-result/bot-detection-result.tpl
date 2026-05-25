@@ -204,6 +204,7 @@ var debugMode = copyFromWindow('_bdDebug') || false;
 
   // ── OUTPUT MODE ───────────────────────────────────────────────────────────────
   var outputMode = data.outputMode || 'object';
+  var undef;
 
   var pick;
   if (outputMode === 'status')  pick = result.status;
@@ -211,7 +212,7 @@ var debugMode = copyFromWindow('_bdDebug') || false;
   if (outputMode === 'signals') pick = result.signals;
 
   if (outputMode !== 'object') {
-    return (pick === '' || pick === undefined || pick === null) ? undefined : pick;
+    return (pick === '' || pick === null) ? undef : pick;
   }
   return result;
 
