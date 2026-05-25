@@ -14,7 +14,7 @@ ___INFO___
   "version": 1,
   "securityGroups": [],
   "displayName": "BOT Detection result",
-  "description": "",
+  "description": "Returns the bot detection result. Configurable output: full object, status, score or signals.",
   "containerContexts": [
     "WEB"
   ]
@@ -23,7 +23,34 @@ ___INFO___
 
 ___TEMPLATE_PARAMETERS___
 
-[]
+[
+  {
+    "type": "SELECT",
+    "name": "outputMode",
+    "displayName": "Output",
+    "selectItems": [
+      {
+        "value": "object",
+        "displayValue": "Full object  { status, score, signals }"
+      },
+      {
+        "value": "status",
+        "displayValue": "status  (\"normal_user\" | \"possible_bot\")"
+      },
+      {
+        "value": "score",
+        "displayValue": "score  (number)"
+      },
+      {
+        "value": "signals",
+        "displayValue": "signals  (pipe-separated string)"
+      }
+    ],
+    "simpleValueType": true,
+    "defaultValue": "object",
+    "help": "Choose what the variable returns. Use «Full object» when you need all three values in a single variable; use the individual fields when you need a scalar value (e.g. for GA4 event parameters or trigger conditions)."
+  }
+]
 
 
 ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
@@ -168,14 +195,19 @@ var debugMode = copyFromWindow('_bdDebug') || false;
     signals: signals
   };
 
-    if (debugMode) {
-      logToConsole('[BotDetect v4] score=' + botScore +
-                   ' threshold=' + threshold +
-                   ' | status=' + status +
-                   ' | signals=' + signals);
-    }
+  if (debugMode) {
+    logToConsole('[BotDetect v4] score=' + botScore +
+                 ' threshold=' + threshold +
+                 ' | status=' + status +
+                 ' | signals=' + signals);
+  }
 
-    return result;
+  // ── OUTPUT MODE ───────────────────────────────────────────────────────────────
+  var outputMode = data.outputMode || 'object';
+  if (outputMode === 'status')  return result.status;
+  if (outputMode === 'score')   return result.score;
+  if (outputMode === 'signals') return result.signals;
+  return result;
 
 
 
