@@ -44,15 +44,11 @@ ___TEMPLATE_PARAMETERS___
       {
         "value": "signals",
         "displayValue": "signals  (pipe-separated string)"
-      },
-      {
-        "value": "json",
-        "displayValue": "JSON string  (for server-side GTM)"
       }
     ],
     "simpleValueType": true,
     "defaultValue": "object",
-    "help": "Choose what the variable returns. Use «Full object» when you need all three values in a single variable; use the individual fields when you need a scalar value (e.g. for GA4 event parameters or trigger conditions)."
+    "help": "Choose what the variable returns. Use «Full object» for client-side JS only. For server-side GTM, create three separate variables — one per scalar field — and map each to a distinct GA4 event parameter."
   }
 ]
 
@@ -216,11 +212,6 @@ var debugMode = copyFromWindow('_bdDebug') || false;
   if (outputMode === 'signals') pick = result.signals;
 
   if (outputMode !== 'object') {
-    if (outputMode === 'json') {
-      return '{"status":"' + result.status + '",' +
-             '"score":'    + result.score   + ',' +
-             '"signals":"' + result.signals + '"}';
-    }
     return (pick === '' || pick === null) ? undef : pick;
   }
   return result;
