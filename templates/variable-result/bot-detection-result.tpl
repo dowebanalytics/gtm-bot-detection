@@ -41,7 +41,6 @@ var debugMode = copyFromWindow('_bdDebug') || false;
 
 // (nessuna cache — i _bd* sono getter live, il ricalcolo è istantaneo)
 
-try {
 
   // ── v4 SIGNAL #1: INTEGRITY CHECK ────────────────────────────────────────────
   if (copyFromWindow('_bdLiveCheckPassed') === false) {
@@ -178,16 +177,6 @@ try {
 
     return result;
 
-} catch (e) {
-  if (debugMode) {
-    logToConsole('[BotDetect v4] ERROR: ' + e);
-  }
-  return {
-    status:  'error',
-    score:   -1,
-    signals: 'err'
-  };
-}
 
 
 ___WEB_PERMISSIONS___
