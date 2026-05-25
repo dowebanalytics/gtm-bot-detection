@@ -44,6 +44,10 @@ ___TEMPLATE_PARAMETERS___
       {
         "value": "signals",
         "displayValue": "signals  (pipe-separated string)"
+      },
+      {
+        "value": "json",
+        "displayValue": "JSON string  (for server-side GTM)"
       }
     ],
     "simpleValueType": true,
@@ -212,6 +216,11 @@ var debugMode = copyFromWindow('_bdDebug') || false;
   if (outputMode === 'signals') pick = result.signals;
 
   if (outputMode !== 'object') {
+    if (outputMode === 'json') {
+      return '{"status":"' + result.status + '",' +
+             '"score":'    + result.score   + ',' +
+             '"signals":"' + result.signals + '"}';
+    }
     return (pick === '' || pick === null) ? undef : pick;
   }
   return result;
