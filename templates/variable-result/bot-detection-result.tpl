@@ -204,9 +204,15 @@ var debugMode = copyFromWindow('_bdDebug') || false;
 
   // ── OUTPUT MODE ───────────────────────────────────────────────────────────────
   var outputMode = data.outputMode || 'object';
-  if (outputMode === 'status')  return result.status;
-  if (outputMode === 'score')   return result.score;
-  if (outputMode === 'signals') return result.signals;
+
+  var pick;
+  if (outputMode === 'status')  pick = result.status;
+  if (outputMode === 'score')   pick = result.score;
+  if (outputMode === 'signals') pick = result.signals;
+
+  if (outputMode !== 'object') {
+    return (pick === '' || pick === undefined || pick === null) ? undefined : pick;
+  }
   return result;
 
 
